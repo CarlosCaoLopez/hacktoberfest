@@ -40,9 +40,13 @@ class DroneService:
         if drone.battery_capacity < 25:
             self._create_error_response("LOW_BATTERY", "Batería < 25%", 400)
 
-        # Validar estado - debe estar en IDLE, LOADING o LOADED
-        if drone.state not in [DroneState.IDLE, DroneState.LOADING, DroneState.LOADED]:
+        # Validar estado - debe estar en IDLE o LOADING
+        if drone.state not in [DroneState.IDLE, DroneState.LOADING]:
             self._create_error_response("INVALID_STATE", "Estado no válido para carga", 400)
+
+        # Validar hay medicamentos
+        if not meds:
+            self._create_error_response("NO_MEDICATIONS", "No se han proporcionado medicamentos", 400)
 
         # Validar peso
         current_weight = 0
@@ -60,7 +64,7 @@ class DroneService:
         for med in meds:
             drone.medications.append(med.dict())
 
-        drone.state = DroneState.LOADED if total_weight > 0 else DroneState.LOADING
+        drone.state = DroneState.LOADED if total_weight == drone.weight_limit else DroneState.LOADING
         await drone.save()
         return drone
 

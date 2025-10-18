@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest # Usa la imagen oficial
+    container_name: mi-mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db # Persiste los datos en un volumen
+    environment:
+      # Opcional: configura usuario y contraseña
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: hacktoberfest
+
+volumes:
+  mongo-data: # Define el volumen para persistencia

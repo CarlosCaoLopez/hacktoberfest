@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from app.routes import drones, medications
 from app.mqtt.client import mqtt_listener
 from app.chatbot.chatbot_client import chatbot_mqtt
+from app.core.database import connect_to_mongo, close_mongo_connection
 
 app = FastAPI(
     title="Drones Dispatch API",
@@ -19,8 +20,14 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
+    await connect_to_mongo()
     asyncio.create_task(mqtt_listener())
     asyncio.create_task(chatbot_mqtt())
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await close_mongo_connection()
 
 app.include_router(drones.router)
 app.include_router(medications.router)

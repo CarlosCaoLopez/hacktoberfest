@@ -9,9 +9,9 @@ router = APIRouter(prefix="/api/v1/drones", tags=["Medications"])
 service = DroneService()
 
 @router.post("/{serialNumber}/load", response_model=Drone)
-def load_drone(serialNumber: str, meds: List[Medication]):
-    return service.load_drone(serialNumber, meds)
+async def load_drone(serialNumber: str, meds: List[Medication]):
+    return await service.load_drone(serialNumber, meds)
 
 @router.get("/{serialNumber}/medications", response_model=List[Medication])
-def get_medications(serialNumber: str):
-    return service.get_medications(serialNumber)
+async def get_medications(serialNumber: str):
+    return await service.get_medications(serialNumber)

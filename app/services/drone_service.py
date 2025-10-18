@@ -1,53 +1,81 @@
 # app/services/drone_service.py
-from typing import Dict, List
+from typing import List
 from app.models.drone import Drone, DroneState, DroneRegistration, BatteryLevel
 from app.models.medication import Medication
+from app.models.error import Error
 from fastapi import HTTPException
 
+
 class DroneService:
-    def __init__(self):
-        self.drones: Dict[str, Drone] = {}
-        self.medications: Dict[str, List[Medication]] = {}
+    def _create_error_response(self, code: str, message: str, status_code: int):
+        """Crea una respuesta de error estructurada según la especificación"""
+        error = Error(code=code, message=message)
+        raise HTTPException(status_code=status_code, detail=error.dict())
 
-    def register_drone(self, data: DroneRegistration) -> Drone:
-        if data.serial_number in self.drones:
-            raise HTTPException(status_code=400, detail="Serial duplicado")
+    async def register_drone(self, data: DroneRegistration) -> Drone:
+        # Verificar si ya existe un drone con el mismo serial
+        existing_drone = await Drone.find_one(Drone.serial_number == data.serial_number)
+        if existing_drone:
+            self._create_error_response("DUPLICATE_SERIAL", "Serial duplicado", 400)
+
+        # Crear nuevo drone
         drone = Drone(**data.dict(), state=DroneState.IDLE)
-        self.drones[data.serial_number] = drone
-        self.medications[data.serial_number] = []
+        await drone.insert()
         return drone
 
-    def get_available_drones(self) -> List[Drone]:
-        return [
-            d for d in self.drones.values()
-            if d.state == DroneState.IDLE and d.battery_capacity >= 25
-        ]
+    async def get_available_drones(self) -> List[Drone]:
+        drones = await Drone.find(
+            Drone.state == DroneState.IDLE,
+            Drone.battery_capacity >= 25
+        ).to_list()
+        return drones
 
-    def load_drone(self, serial: str, meds: List[Medication]) -> Drone:
-        if serial not in self.drones:
-            raise HTTPException(status_code=404, detail="Drone no encontrado")
-        drone = self.drones[serial]
+    async def load_drone(self, serial: str, meds: List[Medication]) -> Drone:
+        # Buscar el drone
+        drone = await Drone.find_one(Drone.serial_number == serial)
+        if not drone:
+            self._create_error_response("DRONE_NOT_FOUND", "Drone no encontrado", 404)
 
+        # Validar batería
         if drone.battery_capacity < 25:
-            raise HTTPException(status_code=400, detail="Batería < 25%")
-        if drone.state not in [DroneState.IDLE, DroneState.LOADING]:
-            raise HTTPException(status_code=400, detail="Estado no válido para carga")
+            self._create_error_response("LOW_BATTERY", "Batería < 25%", 400)
 
-        total_weight = sum(m.weight for m in meds)
+        # Validar estado - debe estar en IDLE, LOADING o LOADED
+        if drone.state not in [DroneState.IDLE, DroneState.LOADING, DroneState.LOADED]:
+            self._create_error_response("INVALID_STATE", "Estado no válido para carga", 400)
+
+        # Validar peso
+        current_weight = 0
+        if drone.state != DroneState.IDLE:
+            # Solo validar peso actual si no está IDLE
+            current_weight = sum(med["weight"] for med in drone.medications)
+
+        new_weight = sum(m.weight for m in meds)
+        total_weight = current_weight + new_weight
+
         if total_weight > drone.weight_limit:
-            raise HTTPException(status_code=400, detail="Peso excede el límite")
+            self._create_error_response("WEIGHT_EXCEEDED", "Peso excede el límite", 400)
 
-        self.medications[serial].extend(meds)
+        # Agregar medicamentos y actualizar estado
+        for med in meds:
+            drone.medications.append(med.dict())
+
         drone.state = DroneState.LOADED if total_weight > 0 else DroneState.LOADING
-        self.drones[serial] = drone
+        await drone.save()
         return drone
 
-    def get_medications(self, serial: str) -> List[Medication]:
-        if serial not in self.medications:
-            raise HTTPException(status_code=404, detail="Drone no encontrado")
-        return self.medications[serial]
+    async def get_medications(self, serial: str) -> List[Medication]:
+        drone = await Drone.find_one(Drone.serial_number == serial)
+        if not drone:
+            self._create_error_response("DRONE_NOT_FOUND", "Drone no encontrado", 404)
 
-    def get_battery(self, serial: str) -> BatteryLevel:
-        if serial not in self.drones:
-            raise HTTPException(status_code=404, detail="Drone no encontrado")
-        return BatteryLevel(battery_capacity=self.drones[serial].battery_capacity)
+        # Convertir dict a objetos Medication
+        medications = [Medication(**med) for med in drone.medications]
+        return medications
+
+    async def get_battery(self, serial: str) -> BatteryLevel:
+        drone = await Drone.find_one(Drone.serial_number == serial)
+        if not drone:
+            self._create_error_response("DRONE_NOT_FOUND", "Drone no encontrado", 404)
+
+        return BatteryLevel(battery_capacity=drone.battery_capacity)

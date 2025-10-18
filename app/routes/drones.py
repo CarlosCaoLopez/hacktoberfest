@@ -8,13 +8,13 @@ router = APIRouter(prefix="/api/v1/drones", tags=["Drones"])
 service = DroneService()
 
 @router.post("/", response_model=Drone, status_code=status.HTTP_201_CREATED)
-def register_drone(drone: DroneRegistration):
-    return service.register_drone(drone)
+async def register_drone(drone: DroneRegistration):
+    return await service.register_drone(drone)
 
 @router.get("/available", response_model=List[Drone])
-def available_drones():
-    return service.get_available_drones()
+async def available_drones():
+    return await service.get_available_drones()
 
 @router.get("/{serialNumber}/battery", response_model=BatteryLevel)
-def get_battery(serialNumber: str):
-    return service.get_battery(serialNumber)
+async def get_battery(serialNumber: str):
+    return await service.get_battery(serialNumber)

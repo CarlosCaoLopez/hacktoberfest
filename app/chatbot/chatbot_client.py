@@ -1,4 +1,4 @@
-# app/chatbot/chatbot_client.py
+""" # app/chatbot/chatbot_client.py
 import os
 import asyncio
 from aiomqtt import Client, MqttError
@@ -94,3 +94,4 @@ async def chatbot_mqtt():
         print(f"MQTT chatbot error: {e}")
         await asyncio.sleep(5)
         asyncio.create_task(chatbot_mqtt())
+ """

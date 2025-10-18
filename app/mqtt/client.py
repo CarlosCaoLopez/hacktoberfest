@@ -1,4 +1,4 @@
-# app/mqtt/client.py
+""" # app/mqtt/client.py
 import os
 import asyncio
 from aiomqtt import Client, MqttError
@@ -61,3 +61,4 @@ async def mqtt_client():
         print(f"MQTT client error: {e}")
         await asyncio.sleep(5)
         asyncio.create_task(mqtt_client())
+ """

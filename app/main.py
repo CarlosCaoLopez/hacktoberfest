@@ -8,7 +8,7 @@ load_dotenv()
 import asyncio
 from fastapi import FastAPI
 from app.routes import drones, medications
-from app.mqtt.client import mqtt_listener
+from app.mqtt.client import mqtt_client as mqtt_listener
 from app.chatbot.chatbot_client import chatbot_mqtt
 
 app = FastAPI(

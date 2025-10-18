@@ -39,11 +39,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/Drone"
         "400":
-          description: Datos de entrada inválidos (e.g., serial duplicado, modelo inválido).
+          description: Datos de entrada inválidos (e.g., serial duplicado).
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "422":
+          description: Error de validación de datos (e.g., modelo inválido, campos faltantes o con formato incorrecto).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
 
   /drones/available:
     get:
@@ -309,3 +315,44 @@ components:
       required:
         - code
         - message
+
+    ValidationError:
+      type: object
+      description: Error de validación estándar de FastAPI/Pydantic
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                description: Tipo específico de error de validación (e.g., 'enum', 'missing', 'string_type')
+                example: "enum"
+              loc:
+                type: array
+                items:
+                  oneOf:
+                    - type: string
+                    - type: integer
+                description: Ruta al campo que causó el error (e.g., ['body', 'model'])
+                example: ["body", "model"]
+              msg:
+                type: string
+                description: Mensaje descriptivo del error legible por humanos
+                example: "Input should be 'Lightweight', 'Middleweight', 'Cruiserweight' or 'Heavyweight'"
+              input:
+                description: Valor exacto que causó el error
+                example: "NotAModel"
+              ctx:
+                type: object
+                description: Contexto adicional específico del tipo de error
+                example:
+                  expected: "'Lightweight', 'Middleweight', 'Cruiserweight' or 'Heavyweight'"
+            required:
+              - type
+              - loc
+              - msg
+              - input
+      required:
+        - detail

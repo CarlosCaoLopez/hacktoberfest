@@ -1,4 +1,10 @@
 # app/main.py
+import os
+from dotenv import load_dotenv
+
+# Cargar las variables del .env al inicio
+load_dotenv()
+
 import asyncio
 from fastapi import FastAPI
 from app.routes import drones, medications

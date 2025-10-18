@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "drone-control-system"
+version = "0.1.0"
+description = "Sistema de control de drones con FastAPI y YepCode"
+authors = ["Tu Nombre <tu.email@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "app"}]
+python = "^3.12"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.119.0"  # Última versión estable
+pydantic = "^2.12.3"  # Última versión estable
+httpx = "^0.28.1"     # Última versión estable
+paho-mqtt = "^2.1.0"  # Última versión estable
+pytest = "^8.4.2"     # Última versión estable
+pytest-asyncio = "^1.2.0"  # Última versión estable
+pytest-mock = "^3.15.1"     # Última versión estable
+pytest-cov = "^7.0.0"        # Última versión estable
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.4.2"
+pytest-asyncio = "^1.2.0"
+pytest-mock = "^3.15.1"
+pytest-cov = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.6.0"]
+build-backend = "poetry.core.masonry.api"

@@ -8,8 +8,8 @@ load_dotenv()
 import asyncio
 from fastapi import FastAPI
 from app.routes import drones, medications
-from app.mqtt.client import mqtt_client as mqtt_listener
-from app.chatbot.chatbot_client import chatbot_mqtt
+from app.mqtt.consumer import mqtt_listener as mqtt_listener
+# from app.chatbot.chatbot_client import chatbot_mqtt
 from app.core.database import connect_to_mongo, close_mongo_connection
 
 app = FastAPI(
@@ -22,7 +22,7 @@ app = FastAPI(
 async def startup_event():
     await connect_to_mongo()
     asyncio.create_task(mqtt_listener())
-    asyncio.create_task(chatbot_mqtt())
+    # asyncio.create_task(chatbot_mqtt())
 
 
 @app.on_event("shutdown")

@@ -1,4 +1,4 @@
-# app/chatbot/chatbot_logic.py
+""" # app/chatbot/chatbot_logic.py
 import json
 import os
 from dotenv import load_dotenv
@@ -12,10 +12,7 @@ MQTT_TOPIC_GET_MEDICATIONS = os.getenv("MQTT_TOPIC_GET_MEDICATIONS", "drones/get
 CHATBOT_TOPIC_OUT = os.getenv("CHATBOT_TOPIC_OUT", "chatbot/out")
 
 async def process_chat_message(client, message):
-    """
-    Procesa mensajes recibidos del chatbot y publica los comandos
-    o respuestas correspondientes vía MQTT.
-    """
+    
     text = message.payload.decode().lower()
     print(f"🗣️ Usuario dijo: {text}")
 
@@ -96,3 +93,4 @@ async def process_chat_message(client, message):
             "- 'cargar dron 100 con medicinaA, medicinaB'\n"
             "- 'medicamentos del dron 100'"
         )
+ """

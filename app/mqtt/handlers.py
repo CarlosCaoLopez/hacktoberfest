@@ -1,4 +1,4 @@
-# app/mqtt/handlers.py
+""" # app/mqtt/handlers.py
 from app.chatbot.chatbot_logic import process_chat_message
 
 # ----------------------
@@ -19,3 +19,4 @@ async def handle_response(client, topic, payload, out_topic):
 # ----------------------
 async def handle_alert(client, topic, payload, out_topic):
     await client.publish(out_topic, f"⚠️ {payload}")
+ """

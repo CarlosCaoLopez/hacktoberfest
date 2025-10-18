@@ -20,6 +20,10 @@ pytest-mock = "^3.15.1"     # Última versión estable
 pytest-cov = "^7.0.0"        # Última versión estable
 motor = "^3.7.1"
 beanie = "^2.0.0"
+uvicorn = "^0.37.0"
+dotenv = "^0.9.9"
+aiomqtt = "^2.4.0"
+
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.4.2"

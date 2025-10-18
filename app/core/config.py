@@ -1,6 +1,8 @@
 # app/core/config.py
+
 from pydantic import BaseSettings
 import os
+
 
 
 class Settings(BaseSettings):

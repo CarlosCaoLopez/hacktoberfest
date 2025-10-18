@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Drones Dispatch API
+  description: |-
+    API REST para la comunicación con un controlador de despacho de drones.
+    Permite registrar drones, cargarlos con medicamentos y monitorear su estado.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Servidor principal
+
+tags:
+  - name: Drones
+    description: Operaciones relacionadas con la gestión y monitoreo de drones.
+  - name: Medications
+    description: Operaciones relacionadas con la carga de medicamentos.
+
+paths:
+  /drones:
+    post:
+      tags:
+        - Drones
+      summary: Registrar un nuevo drone
+      description: |-
+        Añade un nuevo drone a la flota del sistema. 
+        El cliente proporciona todos los campos requeridos y el estado 
+        inicial del drone se establecerá automáticamente en 'IDLE'.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DroneRegistration"
+      responses:
+        "201":
+          description: Drone registrado exitosamente. Retorna el objeto completo del drone creado (incluyendo el estado 'IDLE').
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Drone"
+        "400":
+          description: Datos de entrada inválidos (e.g., serial duplicado, modelo inválido).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /drones/available:
+    get:
+      tags:
+        - Drones
+      summary: Verificar drones disponibles para carga
+      description: |-
+        Obtiene una lista de todos los drones que están actualmente en estado 'IDLE' 
+        y tienen un nivel de batería suficiente (>= 25%) para iniciar una carga.
+      responses:
+        "200":
+          description: Una lista de drones disponibles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Drone"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /drones/{serialNumber}/load:
+    post:
+      tags:
+        - Medications
+      summary: Cargar un drone con medicamentos
+      description: |-
+        Carga uno o más ítems de medicación en un drone específico.
+        El servicio debe validar:
+        1. Que el peso total no exceda el límite del drone.
+        2. Que la batería del drone sea >= 25%.
+        3. Que el drone esté en estado 'IDLE' o 'LOADING'.
+      parameters:
+        - name: serialNumber
+          in: path
+          required: true
+          description: El número de serie del drone a cargar.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Medication"
+              description: Lista de medicamentos a cargar.
+      responses:
+        "200":
+          description: Medicamentos cargados exitosamente. El drone pasa a estado 'LOADING' o 'LOADED'.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Drone"
+        "400":
+          description: |-
+            Solicitud inválida. Razones posibles:
+            - El peso total excede el límite del drone.
+            - El nivel de batería es < 25%.
+            - El drone no está en un estado que permita la carga (e.g., 'DELIVERING').
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Drone no encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /drones/{serialNumber}/medications:
+    get:
+      tags:
+        - Medications
+      summary: Verificar medicamentos cargados en un drone
+      description: Obtiene la lista de todos los ítems de medicación cargados en un drone específico.
+      parameters:
+        - name: serialNumber
+          in: path
+          required: true
+          description: El número de serie del drone.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de medicamentos cargados.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medication"
+        "404":
+          description: Drone no encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /drones/{serialNumber}/battery:
+    get:
+      tags:
+        - Drones
+      summary: Verificar nivel de batería de un drone
+      description: Obtiene el nivel de batería actual (en porcentaje) de un drone específico.
+      parameters:
+        - name: serialNumber
+          in: path
+          required: true
+          description: El número de serie del drone.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nivel de batería del drone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatteryLevel"
+        "404":
+          description: Drone no encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    DroneRegistration:
+      description: Objeto para registrar un nuevo drone. El estado 'IDLE' se asignará automáticamente en el servidor.
+      type: object
+      properties:
+        serial_number:
+          type: string
+          maxLength: 100
+          description: Número de serie del drone.
+        model:
+          $ref: "#/components/schemas/DroneModel"
+        weight_limit:
+          type: number
+          format: double
+          description: Límite de peso en gramos.
+          maximum: 500
+          minimum: 0
+        battery_capacity:
+          type: integer
+          format: int32
+          description: Capacidad de batería en porcentaje.
+          minimum: 0
+          maximum: 100
+      required:
+        - serial_number
+        - model
+        - weight_limit
+        - battery_capacity
+
+    Drone:
+      description: Representa un drone en la flota.
+      type: object
+      properties:
+        serial_number:
+          type: string
+          maxLength: 100
+          description: Número de serie del drone.
+        model:
+          $ref: "#/components/schemas/DroneModel"
+        weight_limit:
+          type: number
+          format: double
+          description: Límite de peso en gramos.
+          maximum: 500
+          minimum: 0
+        battery_capacity:
+          type: integer
+          format: int32
+          description: Capacidad de batería en porcentaje.
+          minimum: 0
+          maximum: 100
+        state:
+          $ref: "#/components/schemas/DroneState"
+      required:
+        - serial_number
+        - model
+        - weight_limit
+        - battery_capacity
+        - state
+
+    Medication:
+      description: Representa un ítem de medicación.
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre del medicamento.
+          pattern: "^[a-zA-Z0-9_-]+$"
+        weight:
+          type: number
+          format: double
+          description: Peso del medicamento en gramos.
+          minimum: 0.01
+        code:
+          type: string
+          description: Código del medicamento.
+          pattern: "^[A-Z0-9_]+$"
+        image:
+          type: string
+          format: uri
+          description: URL a una imagen del medicamento.
+      required:
+        - name
+        - weight
+        - code
+        - image
+
+    DroneModel:
+      type: string
+      description: Modelo del drone.
+      enum:
+        - Lightweight
+        - Middleweight
+        - Cruiserweight
+        - Heavyweight
+
+    DroneState:
+      type: string
+      description: Estado actual del drone.
+      enum:
+        - IDLE
+        - LOADING
+        - LOADED
+        - DELIVERING
+        - DELIVERED
+        - RETURNING
+
+    BatteryLevel:
+      type: object
+      description: Un objeto que reporta específicamente el nivel de batería.
+      properties:
+        battery_capacity:
+          type: integer
+          format: int32
+          description: Capacidad de batería en porcentaje.
+          minimum: 0
+          maximum: 100
+      required:
+        - battery_capacity
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Un código de error interno.
+        message:
+          type: string
+          description: Un mensaje descriptivo del error.
+      required:
+        - code
+        - message

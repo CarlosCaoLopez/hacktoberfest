@@ -31,11 +31,15 @@ async def process_message(session: ClientSession, client: Client, message: dict)
 
     try:
         if method == "POST":
+            print(f"➡️ Llamando {method} {url} con payload: {payload}")
             async with session.post(url, json=payload) as resp:
                 resp_json = await resp.json()
+                print(f"⬅️ Respuesta recibida: {resp_json}")
         elif method == "GET":
+            print(f"➡️ Llamando {method} {url} con params: {payload}")
             async with session.get(url, params=payload) as resp:
                 resp_json = await resp.json()
+                print(f"⬅️ Respuesta recibida: {resp_json}")
         elif method == "PUT":
             async with session.put(url, json=payload) as resp:
                 resp_json = await resp.json()
@@ -54,6 +58,8 @@ async def process_message(session: ClientSession, client: Client, message: dict)
         "payload": resp_json
     }
 
+    print(f"Imprimiendo respuesta en topic {MQTT_TOPIC}: {response_msg}")
+
     # Publicar la respuesta en el mismo topic
     await client.publish(MQTT_TOPIC, json.dumps(response_msg))
     print(f"✅ Procesado mensaje tipo 'pregunta' para endpoint {endpoint}")
@@ -64,14 +70,16 @@ async def mqtt_listener():
     Escucha el topic único y procesa mensajes de tipo 'pregunta'.
     """
     async with Client(MQTT_BROKER, port=MQTT_PORT) as client, ClientSession() as session:
-        async with client.messages() as messages:
-            await client.subscribe(MQTT_TOPIC)
-            async for msg in messages:
-                try:
-                    message_json = json.loads(msg.payload.decode())
-                    await process_message(session, client, message_json)
-                except Exception as e:
-                    print("Error procesando mensaje MQTT:", e)
+        await client.subscribe(MQTT_TOPIC)
+
+        # Iteramos directamente sobre el async iterator
+        async for msg in client.messages:
+            try:
+                message_json = json.loads(msg.payload.decode())
+                await process_message(session, client, message_json)
+            except Exception as e:
+                print("Error procesando mensaje MQTT:", e)
+
 
 
 if __name__ == "__main__":

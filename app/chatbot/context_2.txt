@@ -1,0 +1,222 @@
+import json
+
+# --------------------------------------------------------------------------
+# "BASE DE DATOS" DE PROMPTS
+# --------------------------------------------------------------------------
+# Este diccionario anidado actúa como el "switch".
+# La estructura es:
+#   PROMPT_TEMPLATES[ruta_template][metodo_http][codigo_estado]
+# --------------------------------------------------------------------------
+
+PROMPT_TEMPLATES = {
+
+    # === Endpoint: POST /drones ===
+    "/drones": {
+        "POST": {
+            201: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 201 Created):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot para un sistema de despacho de drones. La solicitud del usuario para registrar un nuevo drone fue **exitosa** (código 201).
+
+Genera una respuesta amigable que:
+1.  Confirme que el drone se ha registrado correctamente.
+2.  Presente un resumen claro de los detalles del drone registrado, extrayéndolos del JSON de contexto:
+    * **Número de serie:** `serial_number`
+    * **Modelo:** `model`
+    * **Límite de peso:** `weight_limit` (asegúrate de incluir "gramos").
+    * **Capacidad de batería:** `battery_capacity` (asegúrate de incluir "%").
+    * **Estado inicial:** `state` (tradúcelo como "En espera" o "Listo").""",
+
+            400: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 400 Bad Request):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. La solicitud del usuario para registrar un drone falló con un error 400 (Solicitud incorrecta).
+
+Genera una respuesta clara que:
+1.  Informe al usuario que **no se pudo registrar** el drone.
+2.  Explique la razón del error de forma sencilla, basándote en el campo `message` del JSON de contexto. (Por ejemplo, si el mensaje dice "Serial number already exists", tradúcelo a "El número de serie proporcionado ya existe en el sistema.").""",
+
+            422: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 422 Unprocessable Entity):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. La solicitud del usuario para registrar un drone falló con un error 422 (Error de validación) porque los datos enviados no eran correctos.
+
+Genera una respuesta que:
+1.  Informe al usuario que el registro falló debido a datos inválidos.
+2.  Revise la lista `detail` en el JSON de contexto.
+3.  Para cada error en la lista, crea un punto que explique qué campo estaba mal y por qué, de forma clara y legible.
+    * Usa `loc` para identificar el campo (ej. `loc: ["body", "model"]` significa "el campo 'modelo'").
+    * Usa `msg` para explicar el problema (ej. "Input should be 'Lightweight'..." significa "El modelo debe ser uno de los valores permitidos...")."""
+        }
+    },
+
+    # === Endpoint: GET /drones/available ===
+    "/drones/available": {
+        "GET": {
+            200: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 200 OK):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario preguntó por los drones disponibles para cargar. La API ha devuelto una lista (que puede estar vacía).
+
+Genera una respuesta basada en el JSON de contexto:
+1.  **Si la lista NO está vacía:**
+    * Informa al usuario que se encontraron los siguientes drones disponibles (listos para cargar, con batería >25%).
+    * Presenta una lista formateada de los drones. Para cada drone, incluye:
+        * Número de serie (`serial_number`)
+        * Modelo (`model`)
+        * Límite de peso (`weight_limit` en gramos)
+        * Nivel de batería (`battery_capacity` en %)
+2.  **Si la lista ESTÁ vacía:**
+    * Informa al usuario que, por el momento, no hay ningún drone disponible para iniciar una carga (probablemente porque están todos ocupados o con batería baja).""",
+
+            500: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 500 Internal Server Error):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario preguntó por los drones disponibles, pero la API devolvió un error 500 (Error interno).
+
+Genera una respuesta amigable que:
+1.  Pida disculpas al usuario.
+2.  Le informe que hubo un problema interno al intentar obtener la lista de drones.
+3.  No muestres el mensaje de error técnico (`message` o `code`), simplemente informa del fallo.
+4.  Sugiérele que lo intente de nuevo en unos momentos."""
+        }
+    },
+
+    # === Endpoint: POST /drones/{serialNumber}/load ===
+    "/drones/{serialNumber}/load": {
+        "POST": {
+            200: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 200 OK):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario intentó cargar medicamentos en un drone (S/N: {{serial_number_del_request}}) y la solicitud fue **exitosa** (código 200).
+
+Genera una respuesta que:
+1.  Confirme que los medicamentos se han cargado (o están en proceso de carga) en el drone {{serial_number_del_request}}.
+2.  Indique claramente el **nuevo estado** del drone, basándote en el campo `state` del JSON de respuesta. (Ej. "LOADING" -> "Cargando", "LOADED" -> "Cargado y listo").""",
+
+            400: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 400 Bad Request):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario intentó cargar medicamentos en un drone (S/N: {{serial_number_del_request}}), pero la solicitud falló con un error 400.
+
+Genera una respuesta que:
+1.  Informe al usuario que **no se pudieron cargar** los medicamentos en el drone {{serial_number_del_request}}.
+2.  Explique la **razón específica** del fallo de forma muy clara, traduciendo el campo `message` del JSON.
+    * Ej. "Total weight exceeds limit" -> "El peso total de los medicamentos supera el límite del drone."
+    * Ej. "Battery level is too low" -> "La batería del drone está demasiado baja (menos del 25%) para esta operación."
+    * Ej. "Drone is not in a loadable state" -> "El drone no se puede cargar en este momento (por ejemplo, está en reparto).""",
+
+            404: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 404 Not Found):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario intentó realizar una operación (cargar medicamentos) en un drone (S/N: {{serial_number_del_request}}), pero la API devolvió un error 404.
+
+Genera una respuesta que:
+1.  Informe al usuario que la operación falló.
+2.  Explique que no se pudo encontrar ningún drone con el número de serie: {{serial_number_del_request}}."""
+        }
+    },
+
+    # === Endpoint: GET /drones/{serialNumber}/medications ===
+    "/drones/{serialNumber}/medications": {
+        "GET": {
+            200: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 200 OK):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario preguntó por los medicamentos cargados en un drone (S/N: {{serial_number_del_request}}). La API ha devuelto una lista (que puede estar vacía).
+
+Genera una respuesta basada en el JSON de contexto:
+1.  **Si la lista NO está vacía:**
+    * Informa al usuario que estos son los medicamentos cargados en el drone {{serial_number_del_request}}.
+    * Presenta una lista formateada de los medicamentos. Para cada uno, incluye:
+        * Nombre (`name`)
+        * Código (`code`)
+        * Peso (`weight` en gramos)
+2.  **Si la lista ESTÁ vacía:**
+    * Informa al usuario que el drone {{serial_number_del_request}} no tiene ningún medicamento cargado en este momento.""",
+
+            404: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 404 Not Found):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario intentó consultar los medicamentos de un drone (S/N: {{serial_number_del_request}}), pero la API devolvió un error 404.
+
+Genera una respuesta que:
+1.  Informe al usuario que no se pudo obtener la información.
+2.  Explique que no se pudo encontrar ningún drone con el número de serie: {{serial_number_del_request}}."""
+        }
+    },
+
+    # === Endpoint: GET /drones/{serialNumber}/battery ===
+    "/drones/{serialNumber}/battery": {
+        "GET": {
+            200: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 200 OK):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario preguntó por la batería de un drone (S/N: {{serial_number_del_request}}). La API respondió con éxito.
+
+Genera una respuesta directa y clara que:
+1.  Informe el nivel de batería exacto del drone {{serial_number_del_request}}, usando el valor `battery_capacity` del JSON.
+2.  Asegúrate de incluir el símbolo de porcentaje (%).
+    * Ejemplo: "El drone (S/N: {{serial_number_del_request}}) tiene un {{battery_capacity}}% de batería."
+    """,
+
+            404: """PREGUNTA DEL USUARIO:
+"{{pregunta_usuario}}"
+
+CONTEXTO (Respuesta de la API - 404 Not Found):
+{{api_response_json}}
+
+TAREA:
+Actúa como un asistente de chatbot. El usuario intentó consultar la batería de un drone (S/N: {{serial_number_del_request}}), pero la API devolvió un error 404.
+
+Genera una respuesta que:
+1.  Informe al usuario que no se pudo obtener el nivel de batería.
+2.  Explique que no se pudo encontrar ningún drone con el número de serie: {{serial_number_del_request}}."""
+        }
+    }
+}
+

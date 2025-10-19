@@ -3,7 +3,7 @@ import requests
 import time
 
 # Configuración de la API
-CHAT_API = "CHAT_API"  # Reemplaza con tu URL real
+CHAT_API = "http://127.0.0.1:8000"  # Reemplaza con tu URL real
 
 # Inicializar el historial de chat en session_state
 if "messages" not in st.session_state:
@@ -35,12 +35,20 @@ if prompt := st.chat_input("Escribe aquí a túa mensaxe..."):
         
         try:
             # Enviar mensaje a la API
+            import requests
+
             response = requests.post(
                 f"{CHAT_API}/send",
-                json={"message": prompt},
+                json={
+                    "message": prompt,
+                    "sender_identifier": "user_mqtt_default"
+                },
+                headers={
+                    "Content-Type": "application/json"
+                },
                 timeout=10
             )
-            
+
             if response.status_code == 200:
                 # Obtener respuesta de la API
                 bot_response = response.json().get("response", "Sin respuesta")

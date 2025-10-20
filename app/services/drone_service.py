@@ -5,7 +5,6 @@ from app.models.medication import Medication
 from app.models.error import Error
 from fastapi import HTTPException
 
-
 class DroneService:
     def _create_error_response(self, code: str, message: str, status_code: int):
         """Crea una respuesta de error estructurada según la especificación"""

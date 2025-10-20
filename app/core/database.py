@@ -10,13 +10,10 @@ from app.models.medication import Medication
 
 load_dotenv()
 
-
 class Database:
     client: Optional[AsyncIOMotorClient] = None
 
-
 database = Database()
-
 
 async def connect_to_mongo():
     """Conecta a MongoDB usando Beanie"""
@@ -29,7 +26,6 @@ async def connect_to_mongo():
         database=database.client[database_name],
         document_models=[Drone, Medication]
     )
-
 
 async def close_mongo_connection():
     """Cierra la conexión a MongoDB"""

@@ -1,5 +1,4 @@
 # yepcode_chatbot_with_gemini.py
-
 import os
 import json
 import re
@@ -9,10 +8,6 @@ from dotenv import load_dotenv
 
 import asyncio
 from aiomqtt import Client
-
-# Los imports propios no van bien con YepCode
-#from context_info import get_context_1
-
 
 # --- Configuración (en YepCode, esto se maneja vía Secrets/Environment Variables) ---
 load_dotenv()
@@ -25,21 +20,7 @@ if not GEMINI_API_KEY:
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-
-def get_context_2():
-    script_dir = os.path.dirname(__file__) # Esto será el directorio de 'module_que_contiene_get_context_1.py'
-    file_path = os.path.join(script_dir, 'context_2.txt')
-
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content
-    except FileNotFoundError:
-        print(f"Error: El archivo '{file_path}' no se encontró.")
-        return None
-    except Exception as e:
-        print(f"Error al leer el archivo: {e}")
-        return None
+# Obtener archivos de contexto de entrada y salida para Gemini    
 def get_context_1():
     script_dir = os.path.dirname(__file__) # Esto será el directorio de 'module_que_contiene_get_context_1.py'
     file_path = os.path.join(script_dir, 'context_1.txt')
@@ -70,10 +51,9 @@ def get_context_2():
         print(f"Error al leer el archivo: {e}")
         return None
 
-
 def get_gemini_response(prompt_text, context):
     """
-    Envía un prompt a la API de Gemini y devuelve la respuesta.
+    Envía un prompt a la API de Gemini y devuelve la respuesta. Parte prompt e información de contexto.
     """
     try:
         response = client.models.generate_content(
@@ -111,7 +91,6 @@ class MQTTTimeoutError(Exception):
     """Excepción personalizada para timeout en escucha MQTT."""
     pass
 
-
 async def listen_mqtt_response(timeout=10):
     """
     Escucha el topic MQTT configurado y devuelve el primer mensaje que tenga tipo 'respuesta'.
@@ -143,7 +122,6 @@ async def listen_mqtt_response(timeout=10):
         print(f"Error escuchando MQTT: {e}")
         raise
     
-
 async def process_message(message_text, sender_id="user_mqtt"):
     """
     Procesa un mensaje de texto y devuelve una respuesta, usando Gemini para lógica compleja
@@ -187,7 +165,6 @@ async def process_message(message_text, sender_id="user_mqtt"):
 
 
 PROMPT_TEMPLATES = {
-
     # === Endpoint: POST /drones ===
     "/drones": {
         "POST": {
@@ -398,10 +375,6 @@ Genera una respuesta que:
     }
 }
 
-
-
-import json
-
 def mqtt_response_to_llm_prompt(mqtt_payload: dict, method: str, user_question: str) -> str:
     """
     Convierte un mensaje recibido vía MQTT tipo 'respuesta' en el formato esperado por `get_llm_prompt`.
@@ -416,8 +389,8 @@ def mqtt_response_to_llm_prompt(mqtt_payload: dict, method: str, user_question: 
 
     payload = mqtt_payload.get("payload", {})
     endpoint = mqtt_payload.get("endpoint", "/unknown")
-    method = method  # Puedes ajustar según tu estructura
-    status_code = 200  # O asigna 201 por defecto si quieres
+    method = method
+    status_code = 200  # 
     
     # Convertimos el JSON de la respuesta a string
     api_response_json_str = json.dumps(payload, ensure_ascii=False)

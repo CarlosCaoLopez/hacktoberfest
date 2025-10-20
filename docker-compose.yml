@@ -37,6 +37,17 @@ services:
       - mqtt-broker
     restart: unless-stopped
 
+  front:
+    container_name: streamlit_front
+    build: ./front    
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env.docker
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   mongo-data: # Define el volumen para persistencia
 

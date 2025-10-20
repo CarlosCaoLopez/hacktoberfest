@@ -1,9 +1,13 @@
+import os
 import streamlit as st
 import requests
-import time
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Configuración de la API
-CHAT_API = "http://127.0.0.1:8000"  # Reemplaza con tu URL real
+CHAT_API = os.getenv("CHAT_API", "http://127.0.0.1:8000")  # Valor por defecto si no está definido
 
 # Inicializar el historial de chat en session_state
 if "messages" not in st.session_state:
@@ -11,7 +15,7 @@ if "messages" not in st.session_state:
 
 # Título de la aplicación
 st.title("💬 MedicAir")
-st.subheader("Asistente de despacho de drones para medicación")
+st.subheader("Asistente para la gestión de entregas de medicación mediante drones")
 
 # Mostrar historial de mensajes
 for message in st.session_state.messages:

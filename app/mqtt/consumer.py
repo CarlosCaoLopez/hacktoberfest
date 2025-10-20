@@ -13,7 +13,6 @@ MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
 MQTT_TOPIC = os.getenv("MQTT_TOPIC_UNICO", "chatbot/topic")
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000/api/v1")
 
-
 async def process_message(session: ClientSession, client: Client, message: dict):
     """
     Procesa un mensaje MQTT:
@@ -64,7 +63,6 @@ async def process_message(session: ClientSession, client: Client, message: dict)
     await client.publish(MQTT_TOPIC, json.dumps(response_msg))
     print(f"✅ Procesado mensaje tipo 'pregunta' para endpoint {endpoint}")
 
-
 async def mqtt_listener():
     """
     Escucha el topic único y procesa mensajes de tipo 'pregunta'.
@@ -79,8 +77,6 @@ async def mqtt_listener():
                 await process_message(session, client, message_json)
             except Exception as e:
                 print("Error procesando mensaje MQTT:", e)
-
-
 
 if __name__ == "__main__":
     asyncio.run(mqtt_listener())

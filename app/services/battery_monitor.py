@@ -4,7 +4,6 @@ from typing import Optional
 from app.models.drone import Drone, DroneState
 from app.core.logger import battery_logger
 
-
 class BatteryMonitor:
     """
     Monitor de batería que verifica periódicamente el estado de los drones
@@ -120,7 +119,6 @@ class BatteryMonitor:
                 pass
 
         battery_logger.info("Monitor de batería detenido")
-
 
 # Instancia global del monitor de batería
 battery_monitor = BatteryMonitor()

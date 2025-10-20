@@ -22,7 +22,7 @@ To send and receive messages from the API, the chatbot connects through an **MQT
 
 ![Initial view](assets/demo1.png)
 
-![Chat view](assets/demo1.png)
+![Chat view](assets/demo2.png)
 
 
 ## API Overview

@@ -12,6 +12,7 @@ from app.routes import drones, medications
 from app.mqtt.consumer import mqtt_listener
 from app.chatbot.chatbot_client import process_message
 from app.core.database import connect_to_mongo, close_mongo_connection
+from app.services.battery_monitor import battery_monitor
 
 app = FastAPI(
     title="Drones Dispatch API",
@@ -29,23 +30,17 @@ async def startup_event():
     await connect_to_mongo()
     # Inicia el listener MQTT en segundo plano
     asyncio.create_task(mqtt_listener())
+    # asyncio.create_task(chatbot_mqtt())
+
+    # Iniciar el monitor de batería
+    await battery_monitor.start(interval_seconds=30)
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await close_mongo_connection()
+    # Detener el monitor de batería
+    await battery_monitor.stop()
 
-# Endpoint para enviar mensajes al chatbot
-@app.post("/send")
-async def send_to_chatbot(data: ChatbotMessage):
-    try:
-        print(f"Mensaje de entrada: '{data.message}'")
-        # Procesar el mensaje
-        response = await process_message(data.message, data.sender_identifier)
-        print(f"Respuesta del Chatbot: '{response}'")
-        return {"response": response}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Routers existentes
 app.include_router(drones.router)
 app.include_router(medications.router)

@@ -1,10 +1,10 @@
-# Drone Dispatch Controller API
+# Drone Dispatch Controller with Chatbot Interface
 
-A REST API service for managing a fleet of drones capable of delivering medications. This system serves as a dispatch controller that allows clients to register drones, load them with medications, and monitor their status and battery levels.
+Welcome to **MedicAir**, a **REST API** service for managing a fleet of drones capable of delivering medications. This system functions as a dispatch controller, allowing clients to register drones, load them with medications, and monitor their status and battery levels.
 
-We also provide a simple front-end chat interface to interact with the API.This front-end connects to a chatbot built using YepCode's Gemini API.
+A simple front-end chat interface is also provided to interact with the API. This interface communicates with a chatbot built using **YepCode's Gemini** API.
 
-To deliver and receive the messages from the API, thhe chatbot connects to a MQTT client.
+To send and receive messages from the API, the chatbot connects through an **MQTT client**, enabling real-time communication between the system and the front-end.
 
 ## 🚀 Tech Stack
 

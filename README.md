@@ -18,6 +18,12 @@ To send and receive messages from the API, the chatbot connects through an **MQT
 ![Gemini](https://img.shields.io/badge/Gemini-6CCFF6?style=for-the-badge&logo=gemini&logoColor=white)
 ![OpenAPI](https://img.shields.io/badge/OpenAPI-6CA0DC?style=for-the-badge&logo=openapiinitiative&logoColor=white)
 
+## Demo
+
+![Initial view](assets/demo1.png)
+
+![Chat view](assets/demo1.png)
+
 
 ## API Overview
 
@@ -389,3 +395,7 @@ For detailed API documentation with interactive examples, visit:
 - **ReDoc**: http://localhost:8000/redoc
 
 The API follows OpenAPI 3.0 specifications and provides comprehensive documentation for all endpoints, request/response schemas, and error codes.
+
+## Issues
+
+On 20/10/2025, the chatbot sometimes replies in a wrong way, even though the API works flawlessly.
